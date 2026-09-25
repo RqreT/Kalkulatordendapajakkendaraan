@@ -1,0 +1,507 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="Kalkulator denda telat bayar pajak motor dan mobil (PKB, opsen, SWDKLLJ) untuk 8 provinsi di Indonesia. Perkiraan, bukan tagihan resmi.">
+<style>:root{color-scheme:light}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+<title>HitungPKB</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+:root{
+  --bg:#FFFFFF;
+  --surface:#FFFFFF;
+  --surface-2:#F4F4F5;
+  --ink:#0A0A0A;
+  --muted:#3F3F46;
+  --line:#D4D4D8;
+  --accent:#1747E6;
+  --accent-ink:#FFFFFF;
+  --accent-soft:#E8EEFF;
+  --hero:#FFFFFF;
+  --hero-ink:#0A0A0A;
+  --hero-muted:#3F3F46;
+  --pop:#FFD23F;
+  --pop-ink:#0A0A0A;
+  --late:#C2410C;
+  --late-soft:#FFF1E6;
+  --warn-line:#F6B98A;
+  --shadow:0 2px 0 rgba(10,10,10,.06);
+  --sans:"Plus Jakarta Sans",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+}
+/* Tema terang tetap (putih dengan teks hitam) sesuai permintaan, juga di perangkat mode gelap */
+:root,:root[data-theme="dark"]{color-scheme:light}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:16px;line-height:1.6;padding-inline:16px;padding-block:0 48px}
+.wrap{max-width:1040px;margin:0 auto}
+a{color:var(--accent)}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+header.top{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;padding-block:18px;border-bottom:3px solid var(--accent)}
+.brand{display:flex;align-items:baseline;gap:10px;font-weight:800;font-size:22px;letter-spacing:-.01em}
+.brand b{color:var(--accent)}
+.beta{font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--pop-ink);background:var(--pop);padding:2px 8px;border-radius:99px}
+.updated{font-size:13px;color:var(--muted);font-weight:600}
+
+.intro{padding-block:28px 22px;max-width:700px}
+.intro h1{font-size:clamp(28px,4.6vw,40px);line-height:1.12;letter-spacing:-.02em;margin:0 0 10px;text-wrap:balance;font-weight:800}
+.intro h1 em{font-style:normal;color:var(--accent)}
+.intro p{margin:0;color:var(--muted);font-size:17px}
+
+.grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.05fr);gap:20px;align-items:start}
+@media (max-width:820px){.grid{grid-template-columns:1fr}}
+
+.panel{background:var(--surface);border:1.5px solid var(--line);border-radius:14px;box-shadow:var(--shadow)}
+.panel.result{border:2px solid var(--ink);box-shadow:6px 6px 0 var(--pop)}
+form.panel{padding:20px;display:grid;gap:16px}
+.step{display:grid;gap:6px}
+.step label,.step .lbl{font-weight:700;font-size:15px}
+.hint{font-size:13px;color:var(--muted)}
+select,input[type=text],input[type=date]{width:100%;font:inherit;font-size:16px;color:var(--ink);background:var(--surface);border:1.5px solid var(--line);border-radius:10px;padding:11px 12px}
+select:focus,input:focus{border-color:var(--accent);outline:none;box-shadow:0 0 0 3px var(--accent-soft)}
+input.money{font-family:var(--mono);font-variant-numeric:tabular-nums}
+.money-wrap{position:relative}
+.money-wrap span{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--muted);font-family:var(--mono);font-size:15px;pointer-events:none}
+.money-wrap input{padding-left:40px}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media (max-width:420px){.row2{grid-template-columns:1fr}}
+.seg{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.seg input{position:absolute;opacity:0;pointer-events:none}
+.seg label{display:block;text-align:center;font-weight:700;font-size:14px;padding:10px 6px;border:1.5px solid var(--line);border-radius:10px;background:var(--surface);cursor:pointer;line-height:1.25}
+.seg input:checked+label{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.seg input:focus-visible+label{outline:2px solid var(--accent);outline-offset:2px}
+.linkbtn{background:none;border:0;padding:0;font:inherit;font-size:12.5px;color:var(--accent);text-decoration:underline;cursor:pointer}
+.example{font-size:12.5px;color:var(--muted);background:var(--surface-2);border-radius:8px;padding:8px 10px}
+
+/* Result: styled after a payment notice */
+.result{padding:0;overflow:hidden}
+.res-head{padding:22px 22px 20px;display:grid;gap:4px;background:var(--hero);color:var(--hero-ink)}
+.status{display:inline-flex;align-items:center;gap:6px;width:max-content;font-size:12px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;padding:4px 12px;border-radius:99px}
+.status.ok{background:var(--accent);color:var(--accent-ink)}
+.status.late{background:var(--pop);color:var(--pop-ink);border:1.5px solid var(--ink)}
+.total-label{font-size:14px;color:var(--hero-muted);margin-top:10px;font-weight:700}
+.total{font-family:var(--mono);font-variant-numeric:tabular-nums;font-weight:600;font-size:clamp(36px,6.5vw,50px);letter-spacing:-.02em;line-height:1.05;color:var(--hero-ink)}
+.sentence{margin:8px 0 0;font-size:16px;color:var(--hero-ink);max-width:48ch}
+.sentence b{background:var(--pop);color:var(--pop-ink);padding:0 4px;border-radius:4px}
+.tear{height:0;border-top:2px dashed var(--line);margin-inline:20px}
+.lines{padding:8px 20px 4px}
+.yr{border-bottom:1px solid var(--line);padding-block:10px}
+.yr:last-child{border-bottom:0}
+.yr-title{font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-bottom:4px}
+.li{display:flex;justify-content:space-between;gap:12px;padding-block:6px;font-size:15px}
+.li .k{display:grid}
+.li .k small{color:var(--muted);font-size:13px}
+.li .v{font-family:var(--mono);font-variant-numeric:tabular-nums;white-space:nowrap;font-weight:500}
+.li.fine .v{color:var(--late);font-weight:600}
+.sum{display:flex;justify-content:space-between;padding:14px 20px;background:var(--accent-soft);font-weight:800;font-size:17px}
+.sum .v{font-family:var(--mono);font-variant-numeric:tabular-nums}
+.notes{padding:14px 20px 18px;display:grid;gap:8px;font-size:13px;color:var(--muted)}
+.notes .n{display:flex;gap:8px}
+.notes .n b{color:var(--ink)}
+.actions{display:flex;flex-wrap:wrap;gap:8px;padding:0 20px 20px}
+.btn{font:inherit;font-weight:700;font-size:14px;border-radius:10px;padding:10px 14px;border:1px solid var(--line);background:var(--surface);color:var(--ink);cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;gap:6px}
+.btn.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+
+.banner{margin-top:16px;padding:12px 14px;border-radius:10px;border:1px solid var(--warn-line);background:var(--late-soft);font-size:13.5px}
+.banner b{color:var(--late)}
+
+.prov-card{margin-top:14px;padding:12px 14px;border-radius:10px;background:var(--surface-2);font-size:13px;display:grid;gap:4px}
+.prov-card .t{font-weight:700;font-size:13.5px;display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+.chip{display:inline-block;font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;padding:2px 8px;border-radius:99px;white-space:nowrap}
+.chip.verified{background:var(--accent-soft);color:var(--accent)}
+.chip.estimate{background:var(--late-soft);color:var(--late)}
+input:disabled{opacity:.5}
+.prov-card dl{display:grid;grid-template-columns:auto 1fr;gap:2px 12px;margin:4px 0 0}
+.prov-card dt{color:var(--muted)}
+.prov-card dd{margin:0}
+
+section.info{margin-top:40px;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:28px}
+@media (max-width:820px){section.info{grid-template-columns:1fr}}
+.info h2{font-size:20px;letter-spacing:-.01em;margin:0 0 10px;text-wrap:balance}
+.info p,.info li{max-width:65ch}
+.formula{font-family:var(--mono);font-size:13px;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:12px 14px;overflow-x:auto;white-space:pre;line-height:1.7}
+.tbl-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:10px;background:var(--surface)}
+table{border-collapse:collapse;width:100%;font-size:13.5px}
+th,td{padding:8px 12px;text-align:left;border-bottom:1px solid var(--line)}
+th{font-size:12px;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);font-weight:700}
+tr:last-child td{border-bottom:0}
+td.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
+details{border-bottom:1px solid var(--line);padding-block:12px}
+summary{font-weight:700;cursor:pointer}
+details p{margin:8px 0 0;color:var(--muted)}
+footer{margin-top:44px;padding-top:18px;border-top:1px solid var(--line);font-size:12.5px;color:var(--muted);display:grid;gap:8px}
+footer p{margin:0;max-width:80ch}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header class="top">
+    <div class="brand">Hitung<b>PKB</b> <span class="beta">Beta</span></div>
+    <div class="updated">Data aturan dicek: 25 Sep 2026</div>
+  </header>
+
+  <div class="intro">
+    <h1>Hitung denda <em>telat bayar pajak</em> motor dan mobil</h1>
+    <p>Salin angka PKB dari STNK atau notice pajak tahun lalu, pilih tanggal jatuh tempo, dan totalnya langsung muncul beserta rinciannya.</p>
+  </div>
+
+  <div class="grid">
+    <form class="panel" id="form" novalidate>
+      <div class="step">
+        <label for="prov">Provinsi kendaraan terdaftar</label>
+        <select id="prov"></select>
+        <div class="prov-card" id="provCard"></div>
+      </div>
+
+      <div class="step">
+        <span class="lbl" id="jenisLbl">Jenis kendaraan</span>
+        <div class="seg" role="radiogroup" aria-labelledby="jenisLbl">
+          <input type="radio" name="jenis" id="j-motor" value="motor" checked><label for="j-motor">Motor<br><small>s.d. 250cc</small></label>
+          <input type="radio" name="jenis" id="j-moge" value="moge"><label for="j-moge">Motor<br><small>di atas 250cc</small></label>
+          <input type="radio" name="jenis" id="j-mobil" value="mobil"><label for="j-mobil">Mobil<br><small>pribadi</small></label>
+        </div>
+      </div>
+
+      <div class="row2">
+        <div class="step">
+          <label for="pkb">PKB pokok</label>
+          <div class="money-wrap"><span>Rp</span><input class="money" type="text" id="pkb" inputmode="numeric" autocomplete="off"></div>
+          <span class="hint">Baris "PKB" di STNK/notice.</span>
+        </div>
+        <div class="step">
+          <label for="opsen">Opsen PKB</label>
+          <div class="money-wrap"><span>Rp</span><input class="money" type="text" id="opsen" inputmode="numeric" autocomplete="off"></div>
+          <span class="hint" id="opsenHint">Tidak tahu? <button type="button" class="linkbtn" id="opsenAuto">Isi 66% dari PKB</button></span>
+          <span class="hint" id="opsenNone" hidden>Provinsi ini tidak memungut opsen.</span>
+        </div>
+      </div>
+
+      <div class="row2">
+        <div class="step">
+          <label for="due">Tanggal jatuh tempo</label>
+          <input type="date" id="due">
+          <span class="hint">Kolom "Berlaku s.d." di STNK.</span>
+        </div>
+        <div class="step">
+          <label for="pay">Rencana tanggal bayar</label>
+          <input type="date" id="pay">
+          <span class="hint">Ubah untuk simulasi bayar nanti.</span>
+        </div>
+      </div>
+
+      <div class="example" id="exampleNote">Formulir terisi contoh (motor di Jawa Barat). Ganti dengan angka dari STNK Anda.</div>
+    </form>
+
+    <div class="panel result" aria-live="polite">
+      <div class="res-head">
+        <span class="status" id="status"></span>
+        <div class="total-label">Perkiraan total yang dibayar</div>
+        <div class="total" id="total">Rp0</div>
+        <p class="sentence" id="sentence"></p>
+      </div>
+      <div class="tear" aria-hidden="true"></div>
+      <div class="lines" id="lines"></div>
+      <div class="sum"><span>Total</span><span class="v" id="total2">Rp0</span></div>
+      <div class="notes" id="notes"></div>
+      <div class="actions">
+        <a class="btn primary" id="wa" href="#" target="_blank" rel="noopener">Bagikan ke WhatsApp</a>
+        <button type="button" class="btn" id="copy">Salin rincian</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="banner" id="banner" hidden></div>
+
+  <section class="info">
+    <div>
+      <h2>Cara menghitung manual</h2>
+      <p>Untuk setiap tahun pajak yang terlambat, denda dihitung per bulan. Terlambat satu hari dihitung satu bulan penuh, dan denda berhenti bertambah setelah 24 bulan.</p>
+      <div class="formula" id="formula"></div>
+      <p>Denda SWDKLLJ (sumbangan Jasa Raharja) mengikuti PMK 16/PMK.010/2017: 25% dari pokok bila telat 1–90 hari, 50% untuk 91–180 hari, 75% untuk 181–270 hari, dan 100% di atas 270 hari, paling banyak Rp100.000.</p>
+    </div>
+    <div>
+      <h2>Tarif SWDKLLJ per tahun</h2>
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr><th>Jenis</th><th>Pokok</th><th>Denda maks.</th></tr></thead>
+          <tbody>
+            <tr><td>Motor 50–250cc</td><td class="num">Rp32.000</td><td class="num">Rp32.000</td></tr>
+            <tr><td>Motor di atas 250cc</td><td class="num">Rp80.000</td><td class="num">Rp80.000</td></tr>
+            <tr><td>Sedan, jeep, minibus pribadi</td><td class="num">Rp140.000</td><td class="num">Rp100.000</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="hint">Ditambah Rp3.000 biaya kartu per tahun. Sumber: PMK 16/PMK.010/2017, dirangkum Bapenda Jawa Barat.</p>
+    </div>
+  </section>
+
+  <section class="info">
+    <div>
+      <h2>Pertanyaan umum</h2>
+      <details><summary>Apakah hasil ini sama dengan tagihan Samsat?</summary><p>Hasil ini perkiraan berdasarkan Perda dan PMK. Angka resmi ada di e-Samsat provinsi Anda atau aplikasi SIGNAL. Selisih kecil bisa terjadi karena pembulatan atau biaya administrasi.</p></details>
+      <details><summary>Telat lebih dari satu tahun, bisa bayar online?</summary><p>Umumnya tidak. Tunggakan lebih dari satu tahun biasanya harus dibayar di kantor Samsat induk tempat kendaraan terdaftar.</p></details>
+      <details><summary>Kenapa denda berhenti di 24 bulan?</summary><p>Perda di provinsi yang tersedia di sini membatasi denda keterlambatan paling lama 24 bulan untuk setiap tahun pajak. Setelah itu denda tahun tersebut tidak bertambah lagi.</p></details>
+      <details><summary>Apakah biaya ganti STNK 5 tahunan ikut dihitung?</summary><p>Belum. Kalkulator ini menghitung pajak tahunan dan dendanya saja. Biaya penerbitan STNK dan pelat nomor saat perpanjangan 5 tahunan dibayar terpisah.</p></details>
+      <details><summary>Data saya disimpan?</summary><p>Tidak. Semua hitungan berjalan di browser Anda. Kalkulator ini tidak meminta plat nomor, NIK, atau nomor rangka.</p></details>
+    </div>
+    <div>
+      <h2>Provinsi yang tersedia</h2>
+      <p><b>Terverifikasi</b> berarti tarif denda sudah dicek langsung dari Perda, Pergub, atau Bapenda provinsi. <b>Estimasi</b> berarti tarif mengikuti aturan nasional PP 35/2023 (1% per bulan, maksimal 24 bulan) karena dokumen provinsinya belum ditemukan. Provinsi lain menyusul.</p>
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr><th>Provinsi</th><th>Status</th><th>Denda PKB</th><th>Opsen</th><th>Dasar hukum</th></tr></thead>
+          <tbody id="provTable"></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <p><b>HitungPKB bukan situs pemerintah</b> dan tidak terafiliasi dengan Samsat, Polri, Bapenda, atau Jasa Raharja. Hasil hitung adalah perkiraan, bukan tagihan resmi. Untuk angka pasti dan pembayaran, gunakan e-Samsat provinsi Anda atau aplikasi SIGNAL.</p>
+    <p>Status beta: rumus disusun dari teks Perda/Pergub dan belum dicocokkan dengan tagihan asli. Bila hasil Anda berbeda dengan e-Samsat, kabari kami supaya bisa diperbaiki.</p>
+  </footer>
+</div>
+
+<script>
+(function(){
+  // ---- Data aturan per provinsi (satu-satunya bagian yang perlu dirawat) ----
+  // status: "verified" = tarif denda dari teks Perda/Pergub atau Bapenda provinsi
+  //         "estimate" = memakai aturan nasional PP 35/2023, belum ditemukan di dokumen provinsi
+  const PROVINCES = {
+    dki: {
+      name: "DKI Jakarta",
+      rate: 0.01, maxMonths: 24, opsen: false, status: "verified",
+      law: "Perda Prov. DKI Jakarta No. 1/2024 dan PP 35/2023 (dijelaskan Bapenda Jakarta). DKI tidak memungut opsen PKB (Perda 1/2024 Pasal 2)",
+      eSamsat: "e-Samsat Jakarta atau SIGNAL",
+      program: null
+    },
+    jabar: {
+      name: "Jawa Barat",
+      rate: 0.01, maxMonths: 24, opsen: true, status: "verified",
+      law: "Perda Prov. Jawa Barat No. 9/2023, Pasal 104",
+      eSamsat: "Aplikasi SAMBARA atau SIGNAL",
+      program: null
+    },
+    jateng: {
+      name: "Jawa Tengah",
+      rate: 0.01, maxMonths: 24, opsen: true, status: "estimate",
+      law: "Perda Prov. Jawa Tengah No. 12/2023 dan PP 35/2023. Tarif 0,6% di Perda berlaku untuk angsuran, bukan keterlambatan biasa",
+      eSamsat: "Aplikasi Sakpole atau SIGNAL",
+      program: { title: "Pengurangan PKB 5%", until: "2026-12-31",
+        text: "Jawa Tengah memberi potongan 5% dari PKB pokok sampai 31 Desember 2026 (Keputusan Gubernur No. 100.3.3.1/43/2026). Saat ini potongan tersedia di loket Samsat. Total Anda bisa sedikit lebih kecil dari hasil di atas." }
+    },
+    jatim: {
+      name: "Jawa Timur",
+      rate: 0.01, maxMonths: 24, opsen: true, status: "estimate",
+      law: "Perda Prov. Jawa Timur No. 8/2023 (diubah Perda No. 3/2026); tarif denda diatur Pergub, dihitung dengan PP 35/2023",
+      eSamsat: "Aplikasi Sambang Jatim atau SIGNAL",
+      program: null
+    },
+    banten: {
+      name: "Banten",
+      rate: 0.01, maxMonths: 24, opsen: true, status: "estimate",
+      law: "Perda Prov. Banten No. 1/2024; tarif denda diatur Pergub, dihitung dengan PP 35/2023",
+      eSamsat: "e-Samsat Banten atau SIGNAL",
+      program: { title: "Diskon bayar tepat waktu", until: "2026-12-31",
+        text: "Bapenda Banten mengumumkan diskon 5% PKB untuk pembayaran tepat waktu pada Agustus sampai Desember 2026, dan pemutihan denda tidak lagi digelar. Pastikan ketentuannya di Bapenda Banten." }
+    },
+    sumut: {
+      name: "Sumatera Utara",
+      rate: 0.01, maxMonths: 24, opsen: true, status: "estimate",
+      law: "Perda Prov. Sumatera Utara No. 1/2024; tarif denda dihitung dengan PP 35/2023",
+      eSamsat: "e-Samsat Sumut atau SIGNAL",
+      program: { title: "Diskon denda hingga 57%", until: "2026-09-30",
+        text: "Sumatera Utara memberi potongan denda PKB hingga 57% untuk kendaraan berpelat Sumut, berlaku sampai 30 September 2026. Denda Anda bisa jauh lebih kecil bila bayar sebelum tanggal itu." }
+    },
+    sumsel: {
+      name: "Sumatera Selatan",
+      rate: 0.01, maxMonths: 24, opsen: true, status: "verified",
+      law: "Perda Prov. Sumatera Selatan No. 3/2023, Pasal 89 ayat 7",
+      eSamsat: "e-Samsat Sumsel atau SIGNAL",
+      program: null
+    },
+    sumbar: {
+      name: "Sumatera Barat",
+      rate: 0.01, maxMonths: 24, opsen: true, status: "verified",
+      law: "Pergub Sumatera Barat No. 1/2025 (pelaksana Perda No. 8/2023)",
+      eSamsat: "e-Samsat Sumbar atau SIGNAL",
+      program: { title: "Program pemutihan pajak kendaraan", until: "2026-12-31",
+        text: "Sumatera Barat sedang menjalankan program pemutihan yang diperkirakan berlaku sampai 31 Desember 2026. Denda Anda bisa lebih kecil atau nol. Cek rinciannya di Bapenda Sumbar sebelum membayar." }
+    }
+  };
+  const STATUS_LABEL = { verified: "Terverifikasi", estimate: "Estimasi" };
+  const SWDKLLJ = { motor: 32000, moge: 80000, mobil: 140000 };
+  const CARD_FEE = 3000, SW_FINE_CAP = 100000;
+
+  const $ = id => document.getElementById(id);
+  const fmt = n => "Rp" + Math.round(n).toLocaleString("id-ID");
+  const parse = s => { const d = String(s).replace(/[^0-9]/g, ""); return d ? parseInt(d, 10) : 0; };
+  const fmtInput = el => { const v = parse(el.value); el.value = v ? v.toLocaleString("id-ID") : ""; };
+  const toDate = s => { if (!s) return null; const [y,m,d] = s.split("-").map(Number); return new Date(y, m-1, d); };
+  const iso = d => d.getFullYear() + "-" + String(d.getMonth()+1).padStart(2,"0") + "-" + String(d.getDate()).padStart(2,"0");
+  const dLong = d => d.toLocaleDateString("id-ID", { day:"numeric", month:"long", year:"numeric" });
+  const addYears = (d, n) => { const r = new Date(d); r.setFullYear(r.getFullYear()+n); return r; };
+
+  // Bulan telat: sebagian bulan dihitung satu bulan penuh
+  function monthsLate(due, pay){
+    if (pay <= due) return 0;
+    let m = (pay.getFullYear()-due.getFullYear())*12 + (pay.getMonth()-due.getMonth());
+    if (pay.getDate() > due.getDate()) m += 1;
+    return Math.max(m, 1);
+  }
+  const daysLate = (due, pay) => Math.max(0, Math.round((pay - due) / 86400000));
+  function swFinePct(days){
+    if (days <= 0) return 0;
+    if (days <= 90) return .25;
+    if (days <= 180) return .5;
+    if (days <= 270) return .75;
+    return 1;
+  }
+
+  // ---- Isi dropdown & tabel provinsi ----
+  const sel = $("prov");
+  Object.entries(PROVINCES).forEach(([k,p]) => {
+    const o = document.createElement("option"); o.value = k; o.textContent = p.name; sel.appendChild(o);
+    const tr = document.createElement("tr");
+    tr.innerHTML = `<td>${p.name}</td><td><span class="chip ${p.status}">${STATUS_LABEL[p.status]}</span></td><td class="num">${(p.rate*100).toLocaleString("id-ID")}%/bln, maks. ${p.maxMonths}</td><td>${p.opsen ? "66%" : "Tidak ada"}</td><td>${p.law}</td>`;
+    $("provTable").appendChild(tr);
+  });
+
+  // ---- Contoh awal ----
+  const today = new Date(); today.setHours(0,0,0,0);
+  const exDue = new Date(today); exDue.setMonth(exDue.getMonth()-5); exDue.setDate(Math.min(exDue.getDate(), 28));
+  sel.value = "jabar";
+  $("pkb").value = (248000).toLocaleString("id-ID");
+  $("opsen").value = (163680).toLocaleString("id-ID");
+  $("due").value = iso(exDue);
+  $("pay").value = iso(today);
+  let touched = false;
+
+  function render(){
+    const p = PROVINCES[sel.value];
+    const jenis = document.querySelector('input[name="jenis"]:checked').value;
+    const pkb = parse($("pkb").value), opsen = p.opsen ? parse($("opsen").value) : 0;
+    const due = toDate($("due").value), pay = toDate($("pay").value) || today;
+
+    // Kartu provinsi
+    $("opsen").disabled = !p.opsen;
+    $("opsenAuto").disabled = !p.opsen;
+    $("opsenHint").hidden = !p.opsen; $("opsenNone").hidden = p.opsen;
+    $("provCard").innerHTML = `<span class="t">Aturan ${p.name} <span class="chip ${p.status}">${STATUS_LABEL[p.status]}</span></span>
+      <dl><dt>Denda PKB</dt><dd>${(p.rate*100).toLocaleString("id-ID")}% per bulan, maks. ${p.maxMonths} bulan</dd>
+      <dt>Dasar</dt><dd>${p.law}</dd><dt>Cek resmi</dt><dd>${p.eSamsat}</dd></dl>`;
+
+    // Banner program (hilang otomatis setelah tanggal berakhir)
+    const b = $("banner");
+    if (p.program && toDate(p.program.until) >= today){ b.hidden = false; b.innerHTML = `<b>${p.program.title}:</b> ${p.program.text}`; }
+    else b.hidden = true;
+
+    const base = pkb + opsen;
+    const swBase = SWDKLLJ[jenis];
+    const lines = $("lines"); lines.innerHTML = "";
+    const copyRows = [];
+    let total = 0, anyLate = false, years = 0, fineTotal = 0;
+
+    if (!pkb || !due){
+      $("status").className = "status ok"; $("status").textContent = "Isi data";
+      $("total").textContent = $("total2").textContent = "Rp0";
+      $("sentence").textContent = "Masukkan PKB pokok dan tanggal jatuh tempo untuk melihat hasil.";
+      $("notes").innerHTML = ""; return;
+    }
+
+    // Tahun pajak yang harus dibayar: tahun berjalan + setiap tahun yang sudah lewat jatuh tempo
+    const periods = [];
+    let k = 0;
+    while (addYears(due, k) < pay && k < 10){ periods.push(addYears(due, k)); k++; }
+    if (periods.length === 0) periods.push(due);
+
+    periods.forEach((d, i) => {
+      const m = Math.min(monthsLate(d, pay), p.maxMonths);
+      const days = daysLate(d, pay);
+      const finePkb = pkb * p.rate * m;
+      const fineOpsen = p.opsen ? opsen * p.rate * m : 0;
+      const sw = swBase + CARD_FEE;
+      const swFine = Math.min(swBase * swFinePct(days), SW_FINE_CAP);
+      const sub = pkb + opsen + finePkb + fineOpsen + sw + swFine;
+      total += sub; fineTotal += finePkb + fineOpsen + swFine;
+      if (m > 0) anyLate = true;
+      years++;
+
+      const blk = document.createElement("div"); blk.className = "yr";
+      const title = periods.length > 1 ? `Tahun pajak ${i+1}: jatuh tempo ${dLong(d)}` : `Jatuh tempo ${dLong(d)}`;
+      const rows = [
+        ["PKB pokok", "", pkb, false],
+        ["Opsen PKB", p.opsen ? "Bagian kabupaten/kota" : "Tidak dipungut di provinsi ini", opsen, false],
+        ["Denda PKB", m ? `${(p.rate*100).toLocaleString("id-ID")}% × ${m} bulan` : "Tidak telat", finePkb, m>0],
+        ["Denda opsen", m ? `${(p.rate*100).toLocaleString("id-ID")}% × ${m} bulan` : "Tidak telat", fineOpsen, m>0],
+        ["SWDKLLJ", `Pokok ${fmt(swBase)} + kartu ${fmt(CARD_FEE)}`, sw, false],
+        ["Denda SWDKLLJ", days ? `Telat ${days} hari (${swFinePct(days)*100}%)` : "Tidak telat", swFine, swFine>0]
+      ];
+      blk.innerHTML = `<div class="yr-title">${title}</div>` + rows.map(r =>
+        `<div class="li${r[3] ? " fine" : ""}"><span class="k">${r[0]}${r[1] ? `<small>${r[1]}</small>` : ""}</span><span class="v">${fmt(r[2])}</span></div>`).join("");
+      lines.appendChild(blk);
+      copyRows.push(title); rows.forEach(r => copyRows.push(`  ${r[0]}: ${fmt(r[2])}`));
+    });
+
+    $("total").textContent = $("total2").textContent = fmt(total);
+    const st = $("status");
+    const mMain = monthsLate(due, pay);
+    const kind = jenis === "mobil" ? "Mobil" : "Motor";
+    if (anyLate){
+      st.className = "status late"; st.textContent = "Terlambat";
+      const lateTxt = mMain >= 12 ? `${Math.floor(mMain/12)} tahun ${mMain%12 ? (mMain%12)+" bulan" : ""}`.trim() : `${mMain} bulan`;
+      $("sentence").innerHTML = `${kind} Anda telat sekitar ${lateTxt}${years>1 ? `, dengan ${years} tahun pajak yang harus dilunasi` : ""}. Dendanya sekitar <b>${fmt(fineTotal)}</b>.`;
+    } else {
+      st.className = "status ok"; st.textContent = "Tepat waktu";
+      $("sentence").textContent = `Belum lewat jatuh tempo. Bayar sebelum ${dLong(due)} supaya tidak kena denda.`;
+    }
+
+    const notes = [];
+    if (years > 1) notes.push(`<div class="n"><b>Samsat induk.</b> Tunggakan lebih dari satu tahun biasanya harus dibayar langsung di kantor Samsat induk, tidak bisa online.</div>`);
+    if (years > 1) notes.push(`<div class="n">PKB setiap tahun dianggap sama dengan angka yang Anda masukkan.</div>`);
+    if (p.status === "estimate") notes.push(`<div class="n"><b>Estimasi.</b> Tarif denda ${p.name} memakai aturan nasional PP 35/2023 karena dokumen provinsinya belum kami temukan.</div>`);
+    notes.push(`<div class="n">Perkiraan. Angka resmi: ${p.eSamsat}.</div>`);
+    $("notes").innerHTML = notes.join("");
+
+    // Rumus contoh
+    const mm = Math.min(mMain, p.maxMonths);
+    $("formula").textContent =
+`Denda PKB   = PKB pokok × ${(p.rate*100).toLocaleString("id-ID")}% × bulan telat (maks. ${p.maxMonths})
+            = ${fmt(pkb)} × ${(p.rate*100).toLocaleString("id-ID")}% × ${mm} = ${fmt(pkb*p.rate*mm)}
+Denda opsen = Opsen × ${(p.rate*100).toLocaleString("id-ID")}% × bulan telat
+            = ${fmt(opsen)} × ${(p.rate*100).toLocaleString("id-ID")}% × ${mm} = ${fmt(p.opsen ? opsen*p.rate*mm : 0)}`;
+
+    // Bagikan
+    const shareText = `Perkiraan pajak ${kind.toLowerCase()} saya di ${p.name}: ${fmt(total)} (denda ${fmt(fineTotal)}). Dihitung dengan HitungPKB, perkiraan bukan tagihan resmi.`;
+    $("wa").href = "https://wa.me/?text=" + encodeURIComponent(shareText);
+    $("copy").dataset.text = [`HitungPKB – ${p.name}`, ...copyRows, `Total: ${fmt(total)}`, "Perkiraan, bukan tagihan resmi."].join("\n");
+  }
+
+  // ---- Event ----
+  ["pkb","opsen"].forEach(id => $(id).addEventListener("input", e => { fmtInput(e.target); markTouched(); render(); }));
+  ["prov","due","pay"].forEach(id => $(id).addEventListener("change", () => { markTouched(); render(); }));
+  document.querySelectorAll('input[name="jenis"]').forEach(r => r.addEventListener("change", () => { markTouched(); render(); }));
+  $("opsenAuto").addEventListener("click", () => { const v = Math.round(parse($("pkb").value) * .66); $("opsen").value = v ? v.toLocaleString("id-ID") : ""; markTouched(); render(); });
+  $("form").addEventListener("submit", e => e.preventDefault());
+  function markTouched(){ if (!touched){ touched = true; $("exampleNote").hidden = true; } }
+  $("copy").addEventListener("click", async e => {
+    const btn = e.currentTarget, text = btn.dataset.text || "";
+    try { await navigator.clipboard.writeText(text); btn.textContent = "Tersalin"; }
+    catch(_) {
+      const ta = document.createElement("textarea"); ta.value = text; document.body.appendChild(ta); ta.select();
+      try { document.execCommand("copy"); btn.textContent = "Tersalin"; } catch(__) { btn.textContent = "Pilih teks manual"; }
+      ta.remove();
+    }
+    setTimeout(() => btn.textContent = "Salin rincian", 1800);
+  });
+
+  render();
+})();
+</script>
+</body>
+</html>
